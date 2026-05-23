@@ -25,6 +25,7 @@ export interface NearbyReport {
   last_activity_at: string;
   update_count: number;
   distance_km: number;
+  thumbnail_path: string | null;
 }
 
 // ── Profile types ────────────────────────────────────────────

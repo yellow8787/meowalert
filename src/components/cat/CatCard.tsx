@@ -15,6 +15,8 @@ const TAG_LABELS: Record<ReportTag, string> = {
   maybe_lost: "疑似走失",
 };
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+
 interface Props {
   cat: NearbyReport;
   isSelected: boolean;
@@ -39,6 +41,10 @@ export function CatCard({ cat, isSelected }: Props) {
     (t): t is ReportTag => t !== "kitten" && t in TAG_LABELS
   );
 
+  const thumbnailUrl = cat.thumbnail_path
+    ? `${SUPABASE_URL}/storage/v1/object/public/report-photos/${cat.thumbnail_path}`
+    : null;
+
   return (
     <Link
       href={`/cat/${cat.id}`}
@@ -50,7 +56,33 @@ export function CatCard({ cat, isSelected }: Props) {
           : "border-border bg-card"
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
+        {/* Thumbnail */}
+        <div className="w-[72px] h-[72px] shrink-0 rounded-lg overflow-hidden bg-muted">
+          {thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={thumbnailUrl}
+              alt={cat.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "flex";
+              }}
+            />
+          ) : null}
+          <div
+            className={cn(
+              "w-full h-full items-center justify-center text-3xl",
+              thumbnailUrl ? "hidden" : "flex"
+            )}
+          >
+            🐱
+          </div>
+        </div>
+
+        {/* Main content */}
         <div className="flex-1 min-w-0">
           {/* Status + tags */}
           <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
@@ -88,7 +120,7 @@ export function CatCard({ cat, isSelected }: Props) {
           </div>
         </div>
 
-        {/* Distance + updates */}
+        {/* Distance + update count */}
         <div className="text-right shrink-0 pt-0.5">
           <p className="text-xs font-semibold text-foreground">{distanceText}</p>
           <p className="text-xs text-muted-foreground mt-1">

@@ -35,8 +35,36 @@ export async function GET(request: NextRequest) {
 
     const count = data?.length ?? 0;
     if (count >= MIN_COUNT || radius === 50) {
+      // Fetch one thumbnail per cat in a single query
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cats: any[] = data ?? [];
+      let catsWithPhotos = cats.map((c) => ({ ...c, thumbnail_path: null }));
+
+      if (cats.length > 0) {
+        const catIds = cats.map((c) => c.id as string);
+        const { data: photos } = await supabase
+          .from("report_photos")
+          .select("report_id, storage_path")
+          .in("report_id", catIds)
+          .order("display_order");
+
+        if (photos && photos.length > 0) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const photoMap = new Map<string, string>();
+          photos.forEach((p: { report_id: string; storage_path: string }) => {
+            if (!photoMap.has(p.report_id)) {
+              photoMap.set(p.report_id, p.storage_path);
+            }
+          });
+          catsWithPhotos = cats.map((c) => ({
+            ...c,
+            thumbnail_path: photoMap.get(c.id) ?? null,
+          }));
+        }
+      }
+
       return NextResponse.json({
-        cats: data ?? [],
+        cats: catsWithPhotos,
         radius,
         expanded: radius > 2.5,
         exhausted: radius === 50 && count < MIN_COUNT,

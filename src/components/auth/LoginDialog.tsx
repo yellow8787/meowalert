@@ -12,9 +12,10 @@ import { GoogleSignInButton } from "./GoogleSignInButton";
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  redirectTo?: string;
 }
 
-export function LoginDialog({ open, onOpenChange }: Props) {
+export function LoginDialog({ open, onOpenChange, redirectTo }: Props) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[360px]">
@@ -27,7 +28,7 @@ export function LoginDialog({ open, onOpenChange }: Props) {
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-2">
-          <GoogleSignInButton className="w-full" />
+          <GoogleSignInButton className="w-full" redirectTo={redirectTo} />
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
             登入即表示你同意我們的{" "}
             <a href="/about/privacy" className="underline underline-offset-2">

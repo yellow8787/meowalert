@@ -61,11 +61,15 @@ export function LocationInput({ value, onChange, className }: Props) {
         onChange({ lat, lng, address });
         setGpsLoading(false);
       },
-      () => {
-        toast.error("無法取得 GPS，請改用地圖或地址輸入");
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          toast.error("GPS 權限被拒絕，請在瀏覽器設定中允許位置存取，或改用地圖選點");
+        } else {
+          toast.error("無法取得 GPS 位置，請改用地圖或地址輸入");
+        }
         setGpsLoading(false);
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   }, [onChange]);
 

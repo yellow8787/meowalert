@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import { ReportForm } from "./ReportForm";
+import { LoginRequiredScreen } from "@/components/auth/LoginRequiredScreen";
 
 export default async function ReportPage() {
   const supabase = await createClient();
@@ -9,7 +9,7 @@ export default async function ReportPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/");
+    return <LoginRequiredScreen redirectTo="/report" message="登入後才能新增街貓回報" />;
   }
 
   return <ReportForm />;

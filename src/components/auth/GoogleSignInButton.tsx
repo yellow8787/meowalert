@@ -8,19 +8,21 @@ import { toast } from "sonner";
 
 interface Props {
   className?: string;
+  redirectTo?: string;
 }
 
-export function GoogleSignInButton({ className }: Props) {
+export function GoogleSignInButton({ className, redirectTo }: Props) {
   const [loading, setLoading] = useState(false);
   const pathname = usePathname();
 
   async function handleSignIn() {
     setLoading(true);
     const supabase = createClient();
+    const next = redirectTo ?? pathname;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(pathname)}`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         queryParams: {
           access_type: "offline",
           prompt: "consent",

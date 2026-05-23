@@ -4,11 +4,13 @@ import dynamic from "next/dynamic";
 import { useState } from "react";
 import { useGeolocation } from "@/hooks/useGeolocation";
 import { useNearbyHelpfulCats } from "@/hooks/useNearbyHelpfulCats";
+import { useAuth } from "@/hooks/useAuth";
 import { StatusFilterChips } from "@/components/filter/StatusFilterChips";
 import { CatCard } from "@/components/cat/CatCard";
+import { LoginDialog } from "@/components/auth/LoginDialog";
 import type { ReportStatus } from "@/types/database";
 import { Plus, AlertTriangle, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const CatMap = dynamic(
   () => import("@/components/map/CatMap").then((m) => m.CatMap),
@@ -18,9 +20,12 @@ const CatMap = dynamic(
 const DEFAULT_STATUSES: ReportStatus[] = ["need", "pending", "lost", "rescued"];
 
 export default function HomePage() {
+  const router = useRouter();
   const { location } = useGeolocation();
+  const { user, loading: authLoading } = useAuth();
   const [statusFilter, setStatusFilter] = useState<ReportStatus[]>(DEFAULT_STATUSES);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
 
   const { cats, searchRadius, expanded, exhausted, loading, error } =
     useNearbyHelpfulCats(location, statusFilter);
@@ -29,7 +34,14 @@ export default function HomePage() {
     setSelectedId(id === "" ? null : id);
   }
 
-  const selectedCat = cats.find((c) => c.id === selectedId) ?? null;
+  function handleReportClick(e: React.MouseEvent) {
+    e.preventDefault();
+    if (!authLoading && !user) {
+      setLoginOpen(true);
+      return;
+    }
+    router.push("/report");
+  }
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)]">
@@ -50,13 +62,13 @@ export default function HomePage() {
         )}
 
         {/* Floating report button */}
-        <Link
-          href="/report"
+        <button
+          onClick={handleReportClick}
           className="absolute bottom-3 right-3 z-[1000] flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-lg active:scale-95 transition-transform"
         >
           <Plus className="h-4 w-4" />
           回報
-        </Link>
+        </button>
       </div>
 
       {/* List area */}
@@ -104,6 +116,8 @@ export default function HomePage() {
           ))}
         </div>
       </div>
+
+      <LoginDialog open={loginOpen} onOpenChange={setLoginOpen} redirectTo="/report" />
     </div>
   );
 }

@@ -89,13 +89,21 @@ meowalert/
 └── package.json
 ```
 
-## ✅ 開發前置作業 (使用者需要先做)
+## ✅ 開發前置作業
 
-1. 申請 [Google Cloud 帳號](https://console.cloud.google.com/),啟用 Places API,設定預算警示為 $50 美金
-2. 申請 [Supabase 帳號](https://supabase.com/),建立新專案
-3. 申請 [Vercel 帳號](https://vercel.com/),連結 GitHub
-4. 設定 [Google OAuth client](https://console.cloud.google.com/apis/credentials) 取得 Client ID/Secret
-5. 申請 [VAPID keys](https://web-push-codelab.glitch.me/) (用於推播通知)
+### 開發前先完成 (使用者需先做)
+
+1. ✅ 申請 [Google Cloud 帳號](https://console.cloud.google.com/),啟用 Places API,設定 API key 限制 + 預算警示 $50 美金 + 每日配額 1000
+2. ✅ 申請 [Supabase 帳號](https://supabase.com/),建立新專案 (Region: Northeast Asia Tokyo, 取消勾選 "Automatically expose new tables")
+3. ✅ 產生 VAPID keys (用 `npx web-push generate-vapid-keys` 或 https://vapidkeys.com/)
+4. ✅ 建立 GitHub repo,把 `docs/` 上傳
+
+### 開發中再做 (Claude Code 會在對的時機提示)
+
+5. ⏳ **Milestone 0 結束時**: 申請 [Vercel](https://vercel.com/) 帳號,連結 GitHub repo 自動部署
+6. ⏳ **Milestone 1 開始時**: 設定 [Google OAuth client](https://console.cloud.google.com/apis/credentials),Authorized redirect URI 填:
+   `https://<你的-supabase-專案>.supabase.co/auth/v1/callback`
+   然後到 Supabase Dashboard > Authentication > Providers > Google 填入 Client ID/Secret
 
 詳細步驟見 `09-DEPLOYMENT.md`。
 

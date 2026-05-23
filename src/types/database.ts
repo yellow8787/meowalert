@@ -28,6 +28,30 @@ export interface NearbyReport {
   thumbnail_path: string | null;
 }
 
+// ── Rescue application types ─────────────────────────────────
+export type RescueApplicationStatus = "pending" | "approved" | "rejected" | "completed" | "cancelled";
+
+export interface RescueApplication {
+  id: string;
+  report_id: string;
+  applied_by: string;           // not applicant_id
+  hospital_name: string | null;
+  hospital_place_id: string | null; // not hospital_id
+  hospital_address: string | null;
+  hospital_phone: string | null;
+  expected_action_time: string | null;
+  contact_phone: string | null;
+  contact_line: string | null;
+  contact_other: string | null;
+  message: string | null;       // not notes
+  status: RescueApplicationStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  created_at: string;           // not applied_at
+  updated_at: string;
+}
+
 // ── Profile types ────────────────────────────────────────────
 export type UserRole = "user" | "admin" | "superadmin";
 

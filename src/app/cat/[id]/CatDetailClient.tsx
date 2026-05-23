@@ -32,6 +32,8 @@ interface CatDetail {
   created_by: string | null;
   created_by_name: string | null;
   created_by_avatar: string | null;
+  reporter_line_id?: string | null;
+  reporter_messenger_url?: string | null;
 }
 
 interface Photo {
@@ -220,6 +222,8 @@ export function CatDetailClient({ cat, photos, initialUpdates, supabaseUrl, catI
           catId={catId}
           status={cat.status as ReportStatus}
           isLoggedIn={!!user}
+          reporterLineId={cat.reporter_line_id}
+          reporterMessengerUrl={cat.reporter_messenger_url}
         />
       </div>
 

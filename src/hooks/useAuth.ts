@@ -38,6 +38,8 @@ export function useAuth() {
       } else {
         setState({ user: null, profile: null, loading: false });
       }
+    }).catch(() => {
+      setState({ user: null, profile: null, loading: false });
     });
 
     // 訂閱 auth 狀態變化（登入/登出後自動更新）

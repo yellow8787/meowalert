@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { MapPin, Clock } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
@@ -17,10 +18,9 @@ const TAG_LABELS: Record<ReportTag, string> = {
 interface Props {
   cat: NearbyReport;
   isSelected: boolean;
-  onClick: () => void;
 }
 
-export function CatCard({ cat, isSelected, onClick }: Props) {
+export function CatCard({ cat, isSelected }: Props) {
   const timeAgo = formatDistanceToNow(new Date(cat.last_activity_at), {
     addSuffix: true,
     locale: zhTW,
@@ -40,10 +40,10 @@ export function CatCard({ cat, isSelected, onClick }: Props) {
   );
 
   return (
-    <button
-      onClick={onClick}
+    <Link
+      href={`/cat/${cat.id}`}
       className={cn(
-        "w-full text-left rounded-xl border p-3 transition-all",
+        "w-full text-left rounded-xl border p-3 transition-all block",
         "hover:border-primary/40 hover:shadow-sm active:scale-[0.99]",
         isSelected
           ? "border-primary bg-primary/5 shadow-sm"
@@ -96,6 +96,6 @@ export function CatCard({ cat, isSelected, onClick }: Props) {
           </p>
         </div>
       </div>
-    </button>
+    </Link>
   );
 }

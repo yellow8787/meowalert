@@ -67,6 +67,12 @@ export function CatMarker({ cat, isSelected, onClick }: Props) {
         <div className="text-xs text-gray-500 mt-0.5">
           {[cat.location_district, cat.location_city].filter(Boolean).join(" · ")}
         </div>
+        <a
+          href={`/cat/${cat.id}`}
+          className="block mt-1.5 text-xs text-blue-600 hover:underline"
+        >
+          查看詳情 →
+        </a>
       </Popup>
     </Marker>
   );

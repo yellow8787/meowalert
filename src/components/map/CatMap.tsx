@@ -1,10 +1,11 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { MapContainer, TileLayer, CircleMarker, useMap, useMapEvents } from "react-leaflet";
+import type { Map as LeafletMap } from "leaflet";
 import type { NearbyReport } from "@/types/database";
 import { CatMarker } from "./CatMarker";
 import { BlurredCircle } from "./BlurredCircle";
-import { useEffect } from "react";
 
 interface Props {
   userLat: number;
@@ -30,9 +31,18 @@ function MapClickDismiss({ onDismiss }: { onDismiss: () => void }) {
 
 export function CatMap({ userLat, userLng, cats, selectedId, onSelectCat }: Props) {
   const selectedCat = cats.find((c) => c.id === selectedId) ?? null;
+  const mapRef = useRef<LeafletMap | null>(null);
+
+  useEffect(() => {
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
 
   return (
     <MapContainer
+      ref={mapRef}
       center={[userLat, userLng]}
       zoom={14}
       className="w-full h-full"

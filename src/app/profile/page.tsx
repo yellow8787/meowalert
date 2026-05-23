@@ -1,10 +1,22 @@
-export default function ProfilePage() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-4">
-      <div className="text-center space-y-2">
-        <h1 className="text-xl font-bold">個人資料</h1>
-        <p className="text-muted-foreground text-sm">Milestone 1 開發中</p>
-      </div>
-    </div>
-  );
+import { createClient } from "@/lib/supabase/server";
+import { ProfileClient } from "./ProfileClient";
+import type { Profile } from "@/types/database";
+
+export default async function ProfilePage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let profile: Profile | null = null;
+  if (user) {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    profile = data as Profile | null;
+  }
+
+  return <ProfileClient user={user} profile={profile} />;
 }

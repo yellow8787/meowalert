@@ -1,3 +1,33 @@
+// ── Report types ────────────────────────────────────────────
+export type ReportType = "stray" | "lost" | "found";
+export type ReportStatus =
+  | "need"
+  | "pending"
+  | "rescued"
+  | "lost"
+  | "found"
+  | "reunited"
+  | "archived";
+export type ReportTag = "injured" | "trapped" | "kitten" | "maybe_lost";
+
+/** get_cats_nearby RPC 回傳的型別（含模糊座標） */
+export interface NearbyReport {
+  id: string;
+  name: string;
+  status: ReportStatus;
+  tags: ReportTag[];
+  location_blurred_lat: number;
+  location_blurred_lng: number;
+  location_address: string | null;
+  location_district: string | null;
+  location_city: string | null;
+  created_at: string;
+  last_activity_at: string;
+  update_count: number;
+  distance_km: number;
+}
+
+// ── Profile types ────────────────────────────────────────────
 export type UserRole = "user" | "admin" | "superadmin";
 
 export interface Profile {

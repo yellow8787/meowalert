@@ -24,6 +24,17 @@ export async function POST(request: NextRequest) {
   const description = (formData.get("description") as string | null) || null;
   const tagsRaw = formData.get("tags") as string | null;
 
+  // 走失家貓專用欄位
+  const owner_contact_phone = (formData.get("owner_contact_phone") as string | null) || null;
+  const owner_contact_line = (formData.get("owner_contact_line") as string | null) || null;
+  const owner_contact_other = (formData.get("owner_contact_other") as string | null) || null;
+  const lost_at = (formData.get("lost_at") as string | null) || null;
+  const last_seen_address = (formData.get("last_seen_address") as string | null) || null;
+
+  // 撿到街貓專用欄位
+  const temporary_care = formData.get("temporary_care") === "true";
+  const temporary_care_until = (formData.get("temporary_care_until") as string | null) || null;
+
   if (!report_type || !status || !photo) {
     return NextResponse.json({ error: "缺少必要欄位 (type, status, photo)" }, { status: 400 });
   }
@@ -58,6 +69,19 @@ export async function POST(request: NextRequest) {
       location_blurred: location_wkt, // set_blurred_location trigger 會自動覆寫
       location_address,
       created_by: user.id,
+      // 走失家貓
+      ...(report_type === "lost" && {
+        owner_contact_phone,
+        owner_contact_line,
+        owner_contact_other,
+        lost_at,
+        last_seen_address,
+      }),
+      // 撿到街貓
+      ...(report_type === "found" && {
+        temporary_care,
+        temporary_care_until: temporary_care ? temporary_care_until : null,
+      }),
     })
     .select("id")
     .single();

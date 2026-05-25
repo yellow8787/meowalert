@@ -26,7 +26,7 @@ export default async function CatDetailPage({ params }: Props) {
 
   const cat = catRows[0];
 
-  const [{ data: photos }, { data: updatesData }, { data: updatePhotos }] =
+  const [{ data: photos }, { data: updatesData }, { data: updatePhotos }, { data: reportExtra }] =
     await Promise.all([
       supabase
         .from("report_photos")
@@ -39,6 +39,11 @@ export default async function CatDetailPage({ params }: Props) {
         .select("id, storage_path, display_order, update_id")
         .eq("report_id", id)
         .not("update_id", "is", null),
+      supabase
+        .from("reports")
+        .select("owner_contact_phone, owner_contact_line, owner_contact_other, lost_at, last_seen_address, temporary_care, temporary_care_until, claimed_by, claimed_at, reunited_at")
+        .eq("id", id)
+        .single(),
     ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,9 +54,14 @@ export default async function CatDetailPage({ params }: Props) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 
+  const catWithExtra = {
+    ...cat,
+    ...(reportExtra ?? {}),
+  };
+
   return (
     <CatDetailClient
-      cat={cat}
+      cat={catWithExtra}
       photos={photos ?? []}
       initialUpdates={updates}
       supabaseUrl={supabaseUrl}

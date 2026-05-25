@@ -9,7 +9,7 @@ const STATUS_COLOR: Record<ReportStatus, string> = {
   pending: "#378ADD",
   rescued: "#97C459",
   lost: "#7F77DD",
-  found: "#7F77DD",
+  found: "#F97316",
   reunited: "#97C459",
   archived: "#9CA3AF",
 };

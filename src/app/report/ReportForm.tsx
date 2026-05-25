@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { z } from "zod";
-import { AlertTriangle, Eye, HeartCrack, Home, Loader2 } from "lucide-react";
+import { AlertTriangle, Eye, HeartCrack, Home, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,7 +68,13 @@ const TYPE_TO_DB: Record<ReportTypeId, { report_type: string; status: string }> 
   found: { report_type: "found", status: "found" },
 };
 
-const schema = z.object({
+function nowDatetimeLocal() {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
+
+const baseSchema = z.object({
   photo: z.instanceof(File, { message: "請上傳照片" }),
   location: z
     .object({ lat: z.number(), lng: z.number(), address: z.string() })
@@ -77,6 +83,12 @@ const schema = z.object({
   name: z.string().min(1, "請輸入名字").max(20, "名字不能超過 20 字"),
   description: z.string().max(500, "描述不能超過 500 字").optional(),
 });
+
+const lostSchema = baseSchema.extend({
+  owner_contact_phone: z.string().min(1, "請填寫飼主聯絡電話"),
+});
+
+const foundSchema = baseSchema;
 
 export function ReportForm() {
   const router = useRouter();
@@ -90,9 +102,28 @@ export function ReportForm() {
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // 走失家貓欄位
+  const [ownerPhone, setOwnerPhone] = useState("");
+  const [ownerLine, setOwnerLine] = useState("");
+  const [ownerOther, setOwnerOther] = useState("");
+  const [lostAt, setLostAt] = useState(nowDatetimeLocal());
+  const [lastSeenAddress, setLastSeenAddress] = useState("");
+
+  // 撿到街貓欄位
+  const [temporaryCare, setTemporaryCare] = useState(false);
+  const [temporaryCareUntil, setTemporaryCareUntil] = useState("");
+
   const isStray = reportType === "stray_urgent" || reportType === "stray_watch";
+  const isLost = reportType === "lost";
+  const isFound = reportType === "found";
+
   const isDirty =
-    !!photo || !!location || !!description || tags.length > 0 || name !== "街貓";
+    !!photo ||
+    !!location ||
+    !!description ||
+    tags.length > 0 ||
+    name !== "街貓" ||
+    !!ownerPhone;
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -104,6 +135,12 @@ export function ReportForm() {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [isDirty, submitting]);
+
+  // Reset name default when switching type
+  useEffect(() => {
+    if (isStray) setName((n) => (n === "家貓" ? "街貓" : n));
+    else if (isLost || isFound) setName((n) => (n === "街貓" ? "家貓" : n));
+  }, [isStray, isLost, isFound]);
 
   function toggleTag(tag: string) {
     setTags((prev) =>
@@ -120,7 +157,14 @@ export function ReportForm() {
   }
 
   function validate(): boolean {
-    const result = schema.safeParse({ photo, location, name, description });
+    const schema = isLost ? lostSchema : foundSchema;
+    const result = schema.safeParse({
+      photo,
+      location,
+      name,
+      description,
+      owner_contact_phone: ownerPhone,
+    });
     if (!result.success) {
       const errs: Record<string, string> = {};
       result.error.issues.forEach((e) => {
@@ -153,9 +197,23 @@ export function ReportForm() {
       formData.set("location_lat", location!.lat.toString());
       formData.set("location_lng", location!.lng.toString());
       formData.set("location_address", location!.address);
-      formData.set("name", name.trim() || "街貓");
+      formData.set("name", name.trim() || (isStray ? "街貓" : "家貓"));
       if (description.trim()) formData.set("description", description.trim());
       if (tags.length > 0) formData.set("tags", JSON.stringify(tags));
+
+      if (isLost) {
+        formData.set("owner_contact_phone", ownerPhone.trim());
+        if (ownerLine.trim()) formData.set("owner_contact_line", ownerLine.trim());
+        if (ownerOther.trim()) formData.set("owner_contact_other", ownerOther.trim());
+        if (lostAt) formData.set("lost_at", new Date(lostAt).toISOString());
+        if (lastSeenAddress.trim()) formData.set("last_seen_address", lastSeenAddress.trim());
+      }
+
+      if (isFound) {
+        formData.set("temporary_care", temporaryCare ? "true" : "false");
+        if (temporaryCare && temporaryCareUntil)
+          formData.set("temporary_care_until", temporaryCareUntil);
+      }
 
       const res = await fetch("/api/cats", { method: "POST", body: formData });
       const data = await res.json();
@@ -228,10 +286,7 @@ export function ReportForm() {
             照片 <span className="text-destructive">*</span>
           </label>
           <PhotoUpload
-            onFile={(file) => {
-              setPhoto(file);
-              clearError("photo");
-            }}
+            onFile={(file) => { setPhoto(file); clearError("photo"); }}
             onClear={() => setPhoto(null)}
           />
           {fieldErrors.photo && (
@@ -242,14 +297,12 @@ export function ReportForm() {
         {/* 位置 */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium">
-            位置 <span className="text-destructive">*</span>
+            {isLost ? "走失地點" : isFound ? "撿到地點" : "位置"}{" "}
+            <span className="text-destructive">*</span>
           </label>
           <LocationInput
             value={location}
-            onChange={(loc) => {
-              setLocation(loc);
-              clearError("location");
-            }}
+            onChange={(loc) => { setLocation(loc); clearError("location"); }}
           />
           {fieldErrors.location && (
             <p className="text-xs text-destructive">{fieldErrors.location}</p>
@@ -263,11 +316,8 @@ export function ReportForm() {
           </label>
           <Input
             value={name}
-            onChange={(e) => {
-              setName(e.target.value);
-              clearError("name");
-            }}
-            placeholder="街貓"
+            onChange={(e) => { setName(e.target.value); clearError("name"); }}
+            placeholder={isStray ? "街貓" : "家貓"}
             maxLength={20}
           />
           {fieldErrors.name && (
@@ -278,32 +328,33 @@ export function ReportForm() {
         {/* 描述 */}
         <div className="space-y-1.5">
           <label className="text-sm font-medium">
-            描述{" "}
+            {isLost ? "貓咪特徵描述" : "描述"}{" "}
             <span className="text-muted-foreground text-xs font-normal">(選填)</span>
           </label>
           <Textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="描述你看到的狀況、特徵、位置細節..."
+            placeholder={
+              isLost
+                ? "毛色、體型、特徵、走失前的行為..."
+                : isFound
+                ? "撿到的狀況、貓咪外觀特徵..."
+                : "描述你看到的狀況、特徵、位置細節..."
+            }
             maxLength={500}
             rows={3}
           />
           <p className="text-xs text-muted-foreground text-right">
             {description.length}/500
           </p>
-          {fieldErrors.description && (
-            <p className="text-xs text-destructive">{fieldErrors.description}</p>
-          )}
         </div>
 
-        {/* 子標籤（只有街貓才顯示） */}
+        {/* 街貓標籤 */}
         {isStray && (
           <div className="space-y-2">
             <label className="text-sm font-medium">
               標籤{" "}
-              <span className="text-muted-foreground text-xs font-normal">
-                (選填，可多選)
-              </span>
+              <span className="text-muted-foreground text-xs font-normal">(選填，可多選)</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {TAGS.map(({ value, label }) => (
@@ -322,6 +373,139 @@ export function ReportForm() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ── 走失家貓專用欄位 ── */}
+        {isLost && (
+          <div className="space-y-4 rounded-xl border border-purple-200 bg-purple-50/50 p-4">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-purple-700">
+                飼主聯絡方式會公開顯示，讓看到貓咪的人能直接聯絡你。
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">
+                飼主聯絡電話 <span className="text-destructive">*</span>
+              </label>
+              <Input
+                value={ownerPhone}
+                onChange={(e) => { setOwnerPhone(e.target.value); clearError("owner_contact_phone"); }}
+                placeholder="0912-345-678"
+                type="tel"
+                maxLength={20}
+              />
+              {fieldErrors.owner_contact_phone && (
+                <p className="text-xs text-destructive">{fieldErrors.owner_contact_phone}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">
+                LINE ID{" "}
+                <span className="text-muted-foreground text-xs font-normal">(選填)</span>
+              </label>
+              <Input
+                value={ownerLine}
+                onChange={(e) => setOwnerLine(e.target.value)}
+                placeholder="your_line_id"
+                maxLength={50}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">
+                其他聯絡方式{" "}
+                <span className="text-muted-foreground text-xs font-normal">(選填)</span>
+              </label>
+              <Input
+                value={ownerOther}
+                onChange={(e) => setOwnerOther(e.target.value)}
+                placeholder="Facebook、Instagram、Email..."
+                maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">
+                走失時間{" "}
+                <span className="text-muted-foreground text-xs font-normal">(選填)</span>
+              </label>
+              <input
+                type="datetime-local"
+                value={lostAt}
+                onChange={(e) => setLostAt(e.target.value)}
+                max={nowDatetimeLocal()}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">
+                最後出沒地點{" "}
+                <span className="text-muted-foreground text-xs font-normal">(選填)</span>
+              </label>
+              <Input
+                value={lastSeenAddress}
+                onChange={(e) => setLastSeenAddress(e.target.value)}
+                placeholder="例：大安森林公園附近、台大校園..."
+                maxLength={200}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── 撿到街貓專用欄位 ── */}
+        {isFound && (
+          <div className="space-y-4 rounded-xl border border-green-200 bg-green-50/50 p-4">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-green-700">
+                飼主看到後可以透過這裡聯絡你認領。
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium">是否暫時照護中？</label>
+              <div className="flex gap-2">
+                {[
+                  { value: true, label: "是，我暫時照顧中" },
+                  { value: false, label: "否，貓咪在外面" },
+                ].map(({ value, label }) => (
+                  <button
+                    key={String(value)}
+                    type="button"
+                    onClick={() => setTemporaryCare(value)}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all",
+                      temporaryCare === value
+                        ? "border-green-500 bg-green-100 text-green-700"
+                        : "border-border text-muted-foreground hover:border-muted-foreground/50"
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {temporaryCare && (
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">
+                  暫養到何時{" "}
+                  <span className="text-muted-foreground text-xs font-normal">(選填)</span>
+                </label>
+                <input
+                  type="date"
+                  value={temporaryCareUntil}
+                  onChange={(e) => setTemporaryCareUntil(e.target.value)}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

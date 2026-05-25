@@ -1,5 +1,51 @@
 // ── Report types ────────────────────────────────────────────
 export type ReportType = "stray" | "lost" | "found";
+
+/** Full reports row (subset of columns we actually use) */
+export interface Report {
+  id: string;
+  report_type: ReportType;
+  name: string;
+  description: string | null;
+  status: string;
+  tags: string[];
+  location_address: string | null;
+  location_district: string | null;
+  location_city: string | null;
+  created_by: string;
+  created_at: string;
+  last_activity_at: string;
+  update_count: number;
+  photo_count: number;
+
+  // 走失家貓
+  owner_contact_phone: string | null;
+  owner_contact_line: string | null;
+  owner_contact_other: string | null;
+  lost_at: string | null;
+  last_seen_address: string | null;
+
+  // 撿到街貓
+  temporary_care: boolean;
+  temporary_care_until: string | null;
+
+  // 認領 / 重逢
+  claimed_by: string | null;
+  claimed_at: string | null;
+  reunited_at: string | null;
+}
+
+export interface CatSighting {
+  id: string;
+  report_id: string;
+  spotted_by: string;
+  location: unknown;          // PostGIS point
+  location_address: string | null;
+  message: string | null;
+  spotted_at: string;
+  created_at: string;
+}
+
 export type ReportStatus =
   | "need"
   | "pending"

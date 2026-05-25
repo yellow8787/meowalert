@@ -18,10 +18,13 @@ export interface TimelineUpdate {
 
 const UPDATE_CONFIG: Record<string, { icon: string; label: string }> = {
   created: { icon: "🆕", label: "建立了這筆回報" },
-  spotted: { icon: "👀", label: "再次目擊" },
+  spotted: { icon: "👀", label: "回報了目擊地點" },
   moved: { icon: "📍", label: "更新了位置" },
-  rescue_approved: { icon: "🚑", label: "救援已通過審核" },
+  rescue_applied: { icon: "🚑", label: "申請了救援" },
+  rescue_approved: { icon: "✅", label: "救援已通過審核" },
   rescue_rejected: { icon: "❌", label: "救援申請被退回" },
+  reunited: { icon: "🎉", label: "已重逢！" },
+  claimed: { icon: "🏠", label: "飼主已認領" },
 };
 
 interface Props {

@@ -17,7 +17,7 @@ const CatMap = dynamic(
   { ssr: false }
 );
 
-const DEFAULT_STATUSES: ReportStatus[] = ["need", "pending", "lost", "rescued"];
+const DEFAULT_STATUSES: ReportStatus[] = ["need", "pending", "lost", "found", "rescued"];
 
 export default function HomePage() {
   const router = useRouter();

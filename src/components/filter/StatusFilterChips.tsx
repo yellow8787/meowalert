@@ -24,6 +24,11 @@ const FILTERS: Array<{
     activeClass: "bg-[#EEEDFE] text-[#3C3489] border-[#7F77DD]",
   },
   {
+    status: "found",
+    label: "🟠 撿到街貓",
+    activeClass: "bg-[#FFF3E8] text-[#7A3A00] border-[#F97316]",
+  },
+  {
     status: "rescued",
     label: "🟢 已救援",
     activeClass: "bg-[#EEF7E5] text-[#2D5A14] border-[#97C459]",

@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth/is-admin";
 import { createClient } from "@/lib/supabase/server";
 import { AlertTriangle, Users, Cat, Ambulance, RefreshCw, Heart, Ban } from "lucide-react";
+import { TestPushButton } from "./TestPushButton";
 
 interface AdminStats {
   total_users: number;
@@ -108,6 +109,19 @@ export default async function AdminDashboard() {
           <StatCard label="總回報數" value={s?.total_reports} icon={<Cat className="h-5 w-5" />} />
           <StatCard label="接力更新總數" value={s?.total_updates} icon={<RefreshCw className="h-5 w-5" />} />
           <StatCard label="被封禁使用者" value={s?.banned_users} icon={<Ban className="h-5 w-5" />} />
+        </div>
+      </div>
+
+      {/* Push notification test */}
+      <div className="mb-6">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          🔔 推播測試
+        </h2>
+        <div className="rounded-xl border p-4 bg-card flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            送一則測試通知給自己，確認 Web Push 正常運作。
+          </p>
+          <TestPushButton />
         </div>
       </div>
 

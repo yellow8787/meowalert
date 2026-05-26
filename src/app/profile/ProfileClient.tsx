@@ -7,6 +7,7 @@ import type { Profile } from "@/types/database";
 import { SignOutButton } from "@/components/auth/SignOutButton";
 import { LoginDialog } from "@/components/auth/LoginDialog";
 import { Button } from "@/components/ui/button";
+import { EnableNotifications } from "@/components/notifications/EnableNotifications";
 
 interface LoggedInProps {
   user: User;
@@ -58,6 +59,14 @@ function LoggedInView({ user, profile }: LoggedInProps) {
           <StatCard label="回報" value={profile?.report_count ?? 0} />
           <StatCard label="救援" value={profile?.rescue_count ?? 0} />
           <StatCard label="接力" value={profile?.relay_count ?? 0} />
+        </div>
+      </div>
+
+      {/* 通知設定 */}
+      <div>
+        <p className="text-sm font-medium text-muted-foreground mb-3">通知設定</p>
+        <div className="rounded-xl border p-4">
+          <EnableNotifications />
         </div>
       </div>
 

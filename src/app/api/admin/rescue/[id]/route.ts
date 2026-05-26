@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin } from "@/lib/auth/is-admin";
+import { createNotification } from "@/lib/notifications/send-push";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -42,6 +43,18 @@ export async function PATCH(
     return NextResponse.json({ error: "退回時必須填寫原因" }, { status: 400 });
   }
 
+  // 1. Fetch application + cat name before updating
+  const { data: application, error: fetchError } = await supabase
+    .from("rescue_applications")
+    .select("applied_by, reports(id, name)")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !application) {
+    return NextResponse.json({ error: "申請不存在" }, { status: 404 });
+  }
+
+  // 2. Update status
   const { error } = await supabase
     .from("rescue_applications")
     .update({
@@ -55,6 +68,38 @@ export async function PATCH(
   if (error) {
     console.error("[api/admin/rescue/[id]]", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // 3. Notify applicant (temporarily always notifies for single-account testing)
+  const reportsField = application.reports as
+    | { id: string; name: string | null }
+    | Array<{ id: string; name: string | null }>
+    | null;
+
+  const report = Array.isArray(reportsField) ? reportsField[0] : reportsField;
+  const catName = report?.name || "貓咪";
+  const catId = report?.id;
+
+  if (status === "approved") {
+    await createNotification({
+      userId: application.applied_by,
+      type: "rescue_approved",
+      title: "✅ 救援申請已通過",
+      body: `你申請救援「${catName}」的申請已被管理員通過！`,
+      relatedReportId: catId,
+      relatedUrl: catId ? `/cat/${catId}` : "/",
+    });
+  } else if (status === "rejected") {
+    await createNotification({
+      userId: application.applied_by,
+      type: "rescue_rejected",
+      title: "❌ 救援申請被退回",
+      body: review_note?.trim()
+        ? `「${catName}」：${review_note.trim()}`
+        : `你申請救援「${catName}」的申請被退回。`,
+      relatedReportId: catId,
+      relatedUrl: catId ? `/cat/${catId}` : "/",
+    });
   }
 
   return NextResponse.json({ ok: true });
